@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inspiraciones de Yoga para tu Vida</title>
+
+  <!-- Bulma y Animate.css -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+
+  <!-- Librería para generar PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <style>
+    body { background: #f5f5f5; }
+    .hero { background-image: url('https://images.unsplash.com/photo-1554311885-965b41838b56?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80'); background-size: cover; background-position: center; }
+    .overlay { background-color: rgba(0,0,0,0.6); padding: 2rem; border-radius: 10px; }
+    .suggestion-box { margin-top: 2rem; }
+    #successMessage, #confirmationMessage { display: none; margin-top: 1rem; }
+    #generateNewIdeasBtn { margin-top: 2rem; display: none; }
+    #fraseDelDia { margin-top: 2rem; font-style: italic; font-size: 1.2rem; text-align: center; color: #4a4a4a; }
+  </style>
+</head>
+
+<body>
+
+<section class="hero is-fullheight is-flex is-align-items-center">
+  <div class="container">
+    <div class="overlay">
+      <h1 class="title has-text-white animate__animated animate__fadeInDown">🌿 Inspiraciones de Yoga para tu Vida</h1>
+
+      <div class="control mb-4">
+        <label class="label has-text-white">¿Cuántas inspiraciones quieres generar?</label>
+        <div class="select is-fullwidth">
+          <select id="quantitySelect">
+            <option value="3">3 inspiraciones</option>
+            <option value="5">5 inspiraciones</option>
+            <option value="7">7 inspiraciones</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="control">
+        <button id="generateButton" class="button is-success is-fullwidth" onclick="generateTopics()">Generar Inspiraciones</button>
+      </div>
+
+      <div id="successMessage" class="notification is-primary animate__animated">¡Nuevas Inspiraciones generadas! 🌟</div>
+      <div id="confirmationMessage" class="notification is-info animate__animated">🌸 Tus nuevas inspiraciones están listas para iluminar tu práctica.</div>
+
+      <div id="ideasContainer" class="suggestion-box"></div>
+      <div id="fraseDelDia"></div>
+
+      <div class="control" style="margin-top: 2rem;">
+        <button id="generateNewIdeasBtn" class="button is-link is-fullwidth" onclick="generateTopics()">GENERAR MÁS INSPIRACIONES</button>
+      </div>
+
+      <div class="control" style="margin-top: 2rem;">
+        <button id="downloadPDF" class="button is-warning is-fullwidth" onclick="downloadPDF()">📄 Exportar Inspiraciones a PDF</button>
+      </div>
+
+    </div>
+  </div>
+</section>
+<script>
+  // Inspiraciones reales (16 temas)
+  const inspiraciones = [
+  { tema: 'Yoga', descripcion: 'El arte de conectar cuerpo, mente y espíritu.', angulo: 'Vivir el yoga más allá del tapete.', hashtags: '#YogaVida #UnionCuerpoMente #BienestarTotal', formato: 'Serie de fotos mostrando pequeños momentos de práctica diaria.', gancho: 'El yoga no es una práctica, es un estilo de vida. 🧘‍♀️', post: '🧘‍♀️ El yoga no sólo ocurre en el mat. Cada palabra amable, cada respiro consciente, cada acto de gratitud es yoga en movimiento. Hoy te invito a expandir tu práctica a cada rincón de tu vida: desde cómo caminas hasta cómo amas. El yoga vive en ti. 🌟' },
+  { tema: 'Chakras', descripcion: 'Explora tus centros energéticos para vivir en equilibrio y plenitud.', angulo: 'Cómo alinear tus chakras puede mejorar tu bienestar diario.', hashtags: '#Chakras #EquilibrioInterior #EnergiaVital', formato: 'Video corto mostrando ejercicios de apertura energética.', gancho: '¿Sabías que armonizar tus chakras eleva tu energía positiva? ✨', post: '🌈 Los chakras son los vórtices de energía que nos conectan con el universo. Hoy te invito a dedicar unos minutos a equilibrarlos: visualiza luz en cada uno, desde la raíz hasta la corona. Respira, siente y permite que tu ser brille. 🧘‍♂️✨' },
+  { tema: 'Pranayamas', descripcion: 'Respirar es vivir. Domina tu energía vital a través del pranayama.', angulo: 'El arte de respirar conscientemente para transformar tu mente y cuerpo.', hashtags: '#Pranayama #RespiracionConsciente #Vitalidad', formato: 'Tutorial paso a paso de técnicas respiratorias simples.', gancho: 'Una respiración profunda puede cambiar tu estado emocional. 🌬️', post: '🌬️ El pranayama es el arte de expandir tu fuerza vital. Hoy, regálate cinco minutos de respiración consciente: inhala profundo, siente la energía renovarse, exhala liberando tensiones. Tu respiración es tu aliada más poderosa. 🙏' },
+  { tema: 'Meditación', descripcion: 'Encuentra serenidad y claridad en tu interior.', angulo: 'La meditación como refugio y fuente de poder interno.', hashtags: '#Meditacion #PazInterior #ConscienciaPlena', formato: 'Audio breve guiando una meditación consciente de 5 minutos.', gancho: 'Todo lo que buscas afuera, ya existe dentro de ti. 🧘‍♀️', post: '🧘‍♀️ Hoy, deja que el silencio sea tu medicina. Encuentra un espacio tranquilo, cierra los ojos y conecta con tu respiración. La paz no viene de afuera: florece en tu interior. Respira, siente, sonríe. 🌿' },
+  { tema: 'Posturas', descripcion: 'Asanas que despiertan la energía del cuerpo y calman la mente.', angulo: 'Cómo las posturas fortalecen no solo el cuerpo, sino también el carácter.', hashtags: '#PosturasDeYoga #FuerzaYEquilibrio #Asanas', formato: 'Carrusel mostrando 3-5 posturas básicas para practicar diario.', gancho: 'Tu cuerpo es el templo que sostiene tu alma. 🧘‍♂️', post: '🧘‍♂️ Cada postura de yoga es una oportunidad para escucharte a ti mismo. Hoy te invito a fluir con consciencia: encuentra en cada asana no solo flexibilidad corporal, sino apertura de corazón. Honra cada movimiento, honra tu cuerpo. Tu práctica es tu refugio. 🌟' },
+  { tema: 'Filosofía del Yoga', descripcion: 'Los principios que guían una vida de armonía y consciencia.', angulo: 'Aplicar los Yamas y Niyamas a la vida moderna.', hashtags: '#FilosofiaYogui #YamasNiyamas #SabiduriaInterior', formato: 'Post infográfico resumiendo los Yamas y Niyamas.', gancho: 'El verdadero yoga empieza en tu manera de vivir. ✨', post: '📜 El yoga no es solo una práctica física, es una forma de vivir. Yamas y Niyamas nos enseñan a actuar con compasión, respeto y verdad. Hoy, cultiva la bondad hacia ti y hacia los demás. Tu vida entera puede ser una meditación en movimiento. 🌿' },
+  { tema: 'Mantras', descripcion: 'Vibraciones sonoras que transforman la mente y el corazón.', angulo: 'La fuerza sanadora del sonido consciente.', hashtags: '#Mantras #VibracionPositiva #SonidoSanador', formato: 'Reel cantando o recitando un mantra corto.', gancho: 'Tu voz tiene el poder de sanar tu alma. 🔔', post: '🔔 Un mantra no es solo un canto; es medicina para el alma. Hoy, elige un mantra que resuene contigo y repítelo con intención. Siente cómo la vibración limpia tus pensamientos y te conecta con tu esencia más pura. Sonríe, canta, transforma. ✨' },
+  { tema: 'Ayurveda', descripcion: 'La ciencia de la vida y el equilibrio natural.', angulo: 'Conectar con tu dosha para cultivar salud y armonía.', hashtags: '#Ayurveda #EquilibrioNatural #VidaConsciente', formato: 'Mini guía visual: identifica tu dosha y consejos diarios.', gancho: 'Escucha lo que tu cuerpo y tu alma necesitan. 🌿', post: '🌿 Ayurveda nos enseña que cada ser es único. Conoce tu dosha, abraza tu naturaleza y ajusta tus hábitos a lo que tu cuerpo realmente necesita. Hoy, elige alimentos, acciones y pensamientos que nutran tu esencia. La verdadera salud es vivir en tu propio ritmo. 🌸' },
+  { tema: 'Bandhas', descripcion: 'Cierres energéticos que fortalecen la práctica interna.', angulo: 'Activar tus bandhas para elevar tu energía vital.', hashtags: '#Bandhas #EnergiaVital #YogaAvanzado', formato: 'Video corto mostrando activación básica de Mula Bandha.', gancho: 'Tu poder interior se activa desde el núcleo de tu ser. 🔥', post: '🌀 Los bandhas son llaves internas que despiertan tu fuerza vital. Hoy, conecta con tu centro a través de una respiración profunda y la activación consciente de tus bandhas. Siente la energía ascender, liberando todo lo que estanca tu crecimiento. Tu luz interna espera ser despertada. ✨' },
+  { tema: 'Historia del Yoga', descripcion: 'Un legado milenario de sabiduría y transformación.', angulo: 'Entender el origen para honrar la práctica moderna.', hashtags: '#HistoriaDelYoga #SabiduriaAncestral #LegadoYogui', formato: 'Story visual breve contando el viaje del yoga desde la India.', gancho: 'Cada respiración tuya honra siglos de sabiduría. 🕉️', post: '📖 Desde las antiguas selvas de la India hasta los estudios modernos, el yoga ha viajado transformando vidas. Hoy, al extender tu mat, extiendes también un puente a miles de años de práctica espiritual. Honra tus raíces, practica con gratitud. Somos parte de una tradición viva. 🌿' },
+  { tema: 'Beneficios terapéuticos del yoga', descripcion: 'Sanación profunda para cuerpo, mente y espíritu.', angulo: 'Cómo el yoga puede aliviar dolencias físicas y emocionales.', hashtags: '#YogaTerapéutico #SaludIntegral #SanaciónConsciente', formato: 'Post explicativo sobre 3 beneficios concretos en la salud.', gancho: 'Tu cuerpo escucha cada movimiento de amor que le ofreces. 💖', post: '💖 El yoga no solo fortalece el cuerpo: sana emociones, libera tensiones y abre espacios de paz interior. Hoy, practica con la intención de cuidar de ti mismo, sin forzar, sin competir. Cada respiración consciente es un acto de sanación profunda. 🌸' },
+  { tema: 'Koshas', descripcion: 'Explora las capas sutiles que conforman tu ser.', angulo: 'Conocer los koshas para profundizar tu autoconocimiento.', hashtags: '#Koshas #CuerposSutiles #ViajeInterior', formato: 'Carrusel educativo sobre las 5 capas del ser.', gancho: 'Somos más que cuerpo físico: somos luz en expansión. ✨', post: '✨ Más allá del cuerpo físico existen capas de energía, emoción, mente y espíritu. Son los koshas, envolturas que protegen tu esencia. Hoy, explora más allá de lo tangible: siente tu energía, tu sabiduría interna, tu dicha eterna. Cada práctica te acerca más a ti mismo. 🧘‍♂️' },
+  { tema: 'Om', descripcion: 'El sonido primordial que conecta todo en el universo.', angulo: 'Vibrar Om como práctica de conexión espiritual.', hashtags: '#Om #VibracionUniversal #UnionConsciente', formato: 'Video breve guiando una meditación cantando Om.', gancho: 'Om: la sílaba que abraza todo lo que eres. 🔊', post: '🔊 Om no es solo un sonido, es la vibración que sostiene toda existencia. Hoy, dedica unos minutos a entonar Om conscientemente: siente cómo resuena en cada célula, cómo calma tu mente y expande tu corazón. Deja que el sonido te recuerde: eres parte del Todo. 🌌' },
+  { tema: 'Sutras', descripcion: 'Pilares filosóficos que guían la práctica interna.', angulo: 'Aplicar los Yoga Sutras de Patanjali en la vida diaria.', hashtags: '#YogaSutras #SabiduriaYogui #ConscienciaPlena', formato: 'Post con una frase de sutra y breve reflexión.', gancho: 'La sabiduría eterna cabe en una sola frase. 📜', post: '📜 \"Yoga es el cese de las fluctuaciones de la mente.\" - Patanjali. Cada vez que aquietas tu mente en el presente, estás practicando el verdadero yoga. Hoy, lleva esta enseñanza en cada paso, en cada respiro. La paz está en ti, aquí y ahora. 🌿' },
+  { tema: 'Anatomía', descripcion: 'Conocimiento del cuerpo para una práctica segura y consciente.', angulo: 'Entender tu anatomía para fluir mejor en cada postura.', hashtags: '#AnatomiaYoga #MovimientoConsciente #CuerpoSabio', formato: 'Infografía mostrando alineaciones seguras en asanas.', gancho: 'Conocer tu cuerpo es honrar tu templo sagrado. 🦴', post: '🦴 Tu cuerpo es una obra maestra de la naturaleza. Entender su funcionamiento te ayuda a respetarlo, protegerlo y expandirlo. Hoy, al practicar, siente cada articulación, cada músculo. Ajusta desde la consciencia, no desde la exigencia. Honra tu cuerpo: es tu vehículo hacia el infinito. ✨' },
+  { tema: 'Medicina en el Yoga', descripcion: 'El yoga como terapia natural para cuerpo, mente y alma.', angulo: 'Utilizar el yoga como herramienta complementaria de sanación.', hashtags: '#YogaMedicinal #SanacionHolistica #BienestarIntegral', formato: 'Mini documental mostrando historias de sanación con yoga.', gancho: 'El yoga no solo te fortalece: también te cura. 🌿', post: '🌿 Más que ejercicio, el yoga es medicina viva. Cada respiración consciente, cada postura honrada, sana heridas invisibles. Hoy, practica con la intención de sanar: tu cuerpo recordará, tu mente soltará, tu alma brillará. El primer paso hacia la sanación eres tú. 💖' }
+];
+
+  
+  // Frases Yoguis
+  const frasesYoguis = [
+    '✨ "La paz comienza con una respiración consciente."',
+    '🌿 "Eres un universo de posibilidades infinitas."',
+    '🌸 "La verdadera transformación empieza en el silencio del alma."',
+    '🌟 "Donde va tu atención, florece tu vida."',
+    '🧘‍♂️ "Cada respiración es un regreso al hogar interior."'
+  ];
+  
+  // Función para elegir aleatoriamente sin repetir
+  function getRandomElements(arr, num) {
+    const shuffled = arr.slice().sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, num);
+  }
+  
+  // Función principal de generación
+  function generateTopics() {
+    const ideasContainer = document.getElementById('ideasContainer');
+    const successMessage = document.getElementById('successMessage');
+    const confirmationMessage = document.getElementById('confirmationMessage');
+    const generateNewIdeasBtn = document.getElementById('generateNewIdeasBtn');
+    const fraseDelDia = document.getElementById('fraseDelDia');
+    const quantity = parseInt(document.getElementById('quantitySelect').value);
+  
+    ideasContainer.innerHTML = '';
+  
+    const selectedInspirations = getRandomElements(inspiraciones, quantity);
+    selectedInspirations.forEach((insp, index) => {
+      const topicBox = document.createElement('div');
+      topicBox.className = 'box animate__animated animate__fadeInUp';
+      topicBox.innerHTML = `
+        <h2 class="subtitle">Tema ${index + 1}: ${insp.tema}</h2>
+        <p><strong>Descripción:</strong> ${insp.descripcion}</p>
+        <p><strong>Ángulo Narrativo:</strong> ${insp.angulo}</p>
+        <p><strong>Hashtags:</strong> ${insp.hashtags}</p>
+        <p><strong>Formato Visual:</strong> ${insp.formato}</p>
+        <p><strong>Gancho Verbal:</strong> ${insp.gancho}</p>
+        <p><strong>Post Relacionado:</strong><br>${insp.post}</p>
+      `;
+      ideasContainer.appendChild(topicBox);
+    });
+  
+    const frase = getRandomElements(frasesYoguis, 1)[0];
+    fraseDelDia.innerHTML = `<div class="animate__animated animate__fadeIn"><strong>Frase Yogui del Día:</strong><br>${frase}</div>`;
+  
+    successMessage.style.display = 'block';
+    successMessage.classList.add('animate__fadeInUp');
+  
+    confirmationMessage.style.display = 'block';
+    confirmationMessage.classList.add('animate__fadeInUp');
+  
+    setTimeout(() => {
+      successMessage.style.display = 'none';
+      confirmationMessage.style.display = 'none';
+      successMessage.classList.remove('animate__fadeInUp');
+      confirmationMessage.classList.remove('animate__fadeInUp');
+    }, 3000);
+  
+    generateNewIdeasBtn.style.display = 'block';
+  }
+  
+  // Función para descargar como PDF
+  function downloadPDF() {
+    const element = document.createElement('div');
+    const ideas = document.getElementById('ideasContainer').innerHTML;
+    const frase = document.getElementById('fraseDelDia').innerHTML;
+    element.innerHTML = `
+      <div style='text-align: center; margin-bottom: 20px;'>
+        <h1 style='font-family: Arial, sans-serif; font-size: 28px; color: #4CAF50;'>🌿 Inspiraciones de Yoga 🌿</h1>
+      </div>
+      ${ideas}
+      <div style='margin-top: 20px; text-align: center;'>${frase}</div>
+    `;
+  
+    const fecha = new Date();
+    const fechaStr = `${fecha.getDate().toString().padStart(2, '0')}-${(fecha.getMonth() + 1).toString().padStart(2, '0')}-${fecha.getFullYear()}`;
+  
+    html2pdf()
+      .from(element)
+      .set({
+        margin: 0.5,
+        filename: `Inspiraciones_Yoga_${fechaStr}.pdf`,
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+      })
+      .save();
+  }
+  </script>
+  
+  </body>
+  </html>
+  
